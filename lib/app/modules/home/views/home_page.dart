@@ -560,7 +560,6 @@ class customInputField extends StatelessWidget {
           hintText: hint,
           hintStyle:
               GoogleFonts.aBeeZee(color: const Color(0xffFFFFFF), fontSize: 12),
-          // prefixIcon: const Icon(Icons.search),
           contentPadding:
               const EdgeInsets.symmetric(vertical: 0, horizontal: 40),
           border: const OutlineInputBorder(

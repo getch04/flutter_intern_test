@@ -1,29 +1,13 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_intern_test/app/common/storage/storage.dart';
-import 'package:flutter_intern_test/app/data/api_helper.dart';
-import 'package:flutter_intern_test/app/modules/home/views/pages/carousel_component.dart';
+import 'package:flutter_intern_test/app/modules/widgets/custom_snackbar_widget.dart';
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class HomeController extends GetxController {
-  // final ApiHelper _apiHelper = ApiHelper.to;
 
-  final RxList _dataList = RxList();
-  List<dynamic> get dataList => _dataList;
-  set dataList(List<dynamic> dataList) => _dataList.addAll(dataList);
-  RxInt selectedIndex = 0.obs;
-
-//rating
-  Rx<double?> ratingValue = 0.0.obs;
-
-  ////points
-  RxInt current = 0.obs;
-
-  //FOR OTP PART
+class OtpregisterController extends GetxController {
+  RxInt screenState = 0.obs;
   RxString otpPin = " ".obs;
   RxString countryDial = "+251".obs;
   String verID = " ";
-  RxInt screenState = 0.obs;
 
   @override
   void onInit() {
@@ -32,50 +16,58 @@ class HomeController extends GetxController {
 
   @override
   void onReady() {
-    // TODO: implement onReady
     super.onReady();
   }
-  // void getPosts() {
-  //   _apiHelper.getPosts().futureValue(
-  //         (value) => dataList = value,
-  //         retryFunction: getPosts,
-  //         hasConnection: InternetConnectionChecker().hasConnection,
-  //       );
-  // }
 
-  open() {
-    showModalBottomSheet<void>(
-        context: Get.context!,
-        isScrollControlled: true,
-        builder: (BuildContext context) {
-          return SizedBox(
-            height: MediaQuery.of(context).size.height * 0.65,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[CarouselWithDotsPage()],
-              ),
-            ),
-          );
-        });
+  ///new
+  void showSnackBarText(String text) {
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(
+    //     content: Text(text),
+    //   ),
+    // );
+    Get.snackbar('title', text);
   }
 
-  void onEditProfileClick() {
-    Get.back();
+  Future<void> verifyPhone(String number) async {
+    await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: number,
+      timeout: const Duration(seconds: 20),
+      verificationCompleted: (PhoneAuthCredential credential) {
+        showSnackBarText("Auth Completed!");
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        showSnackBarText("Auth Failed!");
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        showSnackBarText("OTP Sent!");
+        verID = verificationId;
+        // setState(() {
+        screenState.value = 1;
+        // });
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        showSnackBarText("Timeout!");
+      },
+    );
   }
 
-  void onFaqsClick() {
-    Get.back();
-  }
-
-  void onLogoutClick() {
-    Storage.clearStorage();
-    // Get.offAllNamed(Routes.HOME);
-    //Specify the INITIAL SCREEN you want to display to the user after logout
-  }
-
-  onItemTapped(int index) {
-    selectedIndex.value = index;
+  Future<void> verifyOTP() async {
+    await FirebaseAuth.instance
+        .signInWithCredential(
+      PhoneAuthProvider.credential(
+        verificationId: verID,
+        smsCode: otpPin.value,
+      ),
+    )
+        .whenComplete(() {
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(
+      //     builder: (context) => const HomeScreen(),
+      //   ),
+      // );
+      CustomSnackBar.buildCustomSnackbar(title: 'title', msg: '');
+    });
   }
 
   FirebaseAuth auth = FirebaseAuth.instance;
@@ -107,6 +99,7 @@ class HomeController extends GetxController {
         String smsCode = 'xxxx';
         verificationIdReceived.value = verificationId;
         otpCodeVisible.value = true;
+
         print(verificationId);
         // Create a PhoneAuthCredential with the code
         PhoneAuthCredential credential = PhoneAuthProvider.credential(

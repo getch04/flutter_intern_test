@@ -14,7 +14,7 @@ import 'loading_dialog.dart';
 abstract class Extensions {}
 
 extension BorderRadiusExt on num {
-  BorderRadius get borderRadius => BorderRadius.circular(this.r);
+  BorderRadius get borderRadius => BorderRadius.circular(r);
 
   InputBorder outlineInputBorder({
     BorderSide borderSide = BorderSide.none,
@@ -101,71 +101,71 @@ extension FutureExt<T> on Future<Response<T>?> {
     _interface.error = null;
 
     hasConnection.then((value) {
+      if (value) {
+        if (showLoading) LoadingDialog.showLoadingDialog();
 
-  if (value) {
-    if (showLoading) LoadingDialog.showLoadingDialog();
+        this.timeout(
+          Constants.timeout,
+          onTimeout: () {
+            LoadingDialog.closeLoadingDialog();
 
-    this.timeout(
-      Constants.timeout,
-      onTimeout: () {
-        LoadingDialog.closeLoadingDialog();
+            Utils.showSnackbar(Strings.connectionTimeout);
 
-        Utils.showSnackbar(Strings.connectionTimeout);
+            _retry(_interface, retryFunction);
 
-        _retry(_interface, retryFunction);
+            throw const ApiError(
+              type: ErrorType.connectTimeout,
+              error: Strings.connectionTimeout,
+            );
+          },
+        ).then((value) {
+          LoadingDialog.closeLoadingDialog();
 
-        throw const ApiError(
-          type: ErrorType.connectTimeout,
-          error: Strings.connectionTimeout,
-        );
-      },
-    ).then((value) {
-      LoadingDialog.closeLoadingDialog();
+          if (value?.body != null) {
+            final result = ApiResponse.getResponse<T>(value!);
+            if (result != null) {
+              response(result);
+            }
+          }
 
-      if (value?.body != null) {
-        final result = ApiResponse.getResponse<T>(value!);
-        if (result != null) {
-          response(result);
-        }
-      }
+          _interface.update();
+        }).catchError((e) {
+          LoadingDialog.closeLoadingDialog();
 
-      _interface.update();
-    }).catchError((e) {
-      LoadingDialog.closeLoadingDialog();
+          if (e == null) return;
 
-      if (e == null) return;
+          final String errorMessage = e is ApiError ? e.message : e.toString();
 
-      final String errorMessage = e is ApiError ? e.message : e.toString();
+          if (e is ApiError) {
+            if ((e.type == ErrorType.connectTimeout ||
+                e.type == ErrorType.noConnection)) {
+              _interface.error = e;
 
-      if (e is ApiError) {
-        if ((e.type == ErrorType.connectTimeout ||
-            e.type == ErrorType.noConnection)) {
-          _interface.error = e;
+              _retry(_interface, retryFunction);
+            } else {
+              Utils.showDialog(
+                errorMessage,
+                onTap: errorMessage != Strings.unauthorize
+                    ? null
+                    : () {
+                        Storage.clearStorage();
+                        Get.offAllNamed(
+                          Routes.HOME,
+                          //change the ROUTE to the LOGIN or SPLASH screen so that the
+                          //user can login again on UnauthorizeError error
+                        );
+                      },
+              );
+            }
+          }
 
-          _retry(_interface, retryFunction);
-        } else {
-          Utils.showDialog(
-            errorMessage,
-            onTap: errorMessage != Strings.unauthorize
-                ? null
-                : () {
-                    Storage.clearStorage();
-                    Get.offAllNamed(
-                      Routes.HOME,
-                      //change the ROUTE to the LOGIN or SPLASH screen so that the
-                      //user can login again on UnauthorizeError error
-                    );
-                  },
-          );
-        }
-      }
+          if (onError != null) {
+            onError(errorMessage);
+          }
 
-      if (onError != null) {
-        onError(errorMessage);
-      }
-
-      printError(info: 'catchError: error: $e\nerrorMessage: $errorMessage');
-    });
+          printError(
+              info: 'catchError: error: $e\nerrorMessage: $errorMessage');
+        });
       } else {
         Utils.closeDialog();
         Utils.closeSnackbar();
@@ -176,12 +176,10 @@ extension FutureExt<T> on Future<Response<T>?> {
             icon: Icons.wifi_off_rounded,
             msg: 'No internet connection',
             title: 'Warning!');
-      
+      }
+    });
   }
 
-    });
- 
-}
   void _retry(
     ApiInterfaceController _interface,
     VoidCallback retryFunction,

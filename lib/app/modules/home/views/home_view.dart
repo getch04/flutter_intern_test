@@ -11,11 +11,11 @@ class HomeView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-     List<Widget> _widgetOptions = <Widget>[
+    List<Widget> _widgetOptions = <Widget>[
       HomePage(),
-      Text('Search Page',
+      const Text('Search Page',
           style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold)),
-      Text('Profile Page',
+      const Text('Profile Page',
           style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold)),
       Text('Profile Page',
           style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold)),
@@ -77,12 +77,17 @@ class HomeView extends GetView<HomeController> {
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 15, bottom: 15),
-              child: Image(
-                image: AssetImage('assets/images/whatsapp.png'),
-                height: 30,
-                width: 30,
+            InkWell(
+              onTap: () {
+                controller.open();
+              },
+              child: const Padding(
+                padding: EdgeInsets.only(right: 15, bottom: 15),
+                child: Image(
+                  image: AssetImage('assets/images/whatsapp.png'),
+                  height: 30,
+                  width: 30,
+                ),
               ),
             )
           ],
